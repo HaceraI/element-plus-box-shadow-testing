@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=0.25 user-scalable=1" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Fix box-shadow noise [Original]</title>
+	<link rel="stylesheet" href="./ElementPlus/index.css" />
+	<style>
+        [v-cloak] {
+            display: none !important;
+        }
+    </style>
+  </head>
+
+  <body>
+    <div id="app" v-cloak>
+		<div style="display: flex; column-gap: 8px; row-gap: 8px; flex-wrap: wrap;">
+			<el-select
+			  v-for="index of 500" :key="index"
+			  v-model="value"
+			  placeholder="Select"
+			  size="large"
+			  style="width: 240px"
+			>
+			  <el-option
+				v-for="item in options"
+				:key="item.value"
+				:label="item.label"
+				:value="item.value"
+			  />
+			</el-select>
+		  </div>
+    </div>
+	<script src="../vue.global.prod.js"></script>
+	<script src="./ElementPlus/index.full.min.js"></script>
+	<script>
+		const { createApp, reactive, toRefs, ref, onMounted } = Vue;
+        
+        const app = createApp({
+            setup() {
+				const value = ref('')
+				const options = [
+				  {
+					value: 'Option1',
+					label: 'Option1',
+				  },
+				  {
+					value: 'Option2',
+					label: 'Option2',
+				  },
+				  {
+					value: 'Option3',
+					label: 'Option3',
+				  },
+				  {
+					value: 'Option4',
+					label: 'Option4',
+				  },
+				  {
+					value: 'Option5',
+					label: 'Option5',
+				  },
+				];
+				
+				return {
+                    value,
+                    options
+                }
+            }
+        });
+		app.use(ElementPlus);
+        app.mount("#app");
+	</script>
+  </body>
+</html>

@@ -1,76 +1,145 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=0.25 user-scalable=1" />
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Fix box-shadow noise [Original]</title>
-	<link rel="stylesheet" href="./ElementPlus/index.css" />
-	<style>
-        [v-cloak] {
-            display: none !important;
-        }
-    </style>
-  </head>
 
-  <body>
-    <div id="app" v-cloak>
-		<div style="display: flex; column-gap: 8px; row-gap: 8px; flex-wrap: wrap;">
-			<el-select
-			  v-for="index of 500" :key="index"
-			  v-model="value"
-			  placeholder="Select"
-			  size="large"
-			  style="width: 240px"
-			>
-			  <el-option
-				v-for="item in options"
-				:key="item.value"
-				:label="item.label"
-				:value="item.value"
-			  />
-			</el-select>
-		  </div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=0.25 user-scalable=1" />
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Fix box-shadow noise [Original]</title>
+  <link rel="stylesheet" href="./ElementPlus/index.css" />
+  <style>
+    [v-cloak] {
+      display: none !important;
+    }
+
+    #image-list {
+      margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+    }
+
+    .frame-row {
+      display: flex;
+      margin-bottom: 10px;
+    }
+
+    .frame-row img {
+      margin-right: 10px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app" v-cloak>
+    <div style="display: flex; column-gap: 8px; row-gap: 8px; flex-wrap: wrap;">
+      <el-select v-for="index in 10" :key="index" v-model="value" :id="'target_' + index" placeholder="Select"
+        size="large" style="width: 240px" class="target">
+        <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value" />
+      </el-select>
     </div>
-	<script src="../vue.global.prod.js"></script>
-	<script src="./ElementPlus/index.full.min.js"></script>
-	<script>
-		const { createApp, reactive, toRefs, ref, onMounted } = Vue;
-        
-        const app = createApp({
-            setup() {
-				const value = ref('')
-				const options = [
-				  {
-					value: 'Option1',
-					label: 'Option1',
-				  },
-				  {
-					value: 'Option2',
-					label: 'Option2',
-				  },
-				  {
-					value: 'Option3',
-					label: 'Option3',
-				  },
-				  {
-					value: 'Option4',
-					label: 'Option4',
-				  },
-				  {
-					value: 'Option5',
-					label: 'Option5',
-				  },
-				];
-				
-				return {
-                    value,
-                    options
+    <button @click="clearImages">Clear Image Stack</button>
+    <div ref="imageList" id="image-list">
+      <h3>Captured Frames:</h3>
+    </div>
+  </div>
+
+  <script src="../vue.global.prod.js"></script>
+  <script src="./ElementPlus/index.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script>
+    const { createApp, ref, onMounted } = Vue;
+    const app = createApp({
+      setup() {
+        const value = ref('');
+        const imageList = ref(null);
+        const options = [
+          { value: 'Option1', label: 'Option1' },
+          { value: 'Option2', label: 'Option2' },
+          { value: 'Option3', label: 'Option3' },
+          { value: 'Option4', label: 'Option4' },
+          { value: 'Option5', label: 'Option5' }
+        ];
+
+        // 捕获当前帧并转换为图片
+        function captureFrame(element) {
+          if (!element || !(element instanceof Element)) {
+            console.error('Invalid element provided:', element);
+            return;
+          }
+
+          requestAnimationFrame(() => {
+            html2canvas(element.parentElement, {
+              useCORS: true,
+              scale: 3,
+              logging: true,
+              backgroundColor: null
+            }).then(canvas => {
+              const img = document.createElement('img');
+              img.src = canvas.toDataURL();
+              img.style.margin = '10px';
+              img.style.border = '1px solid #ccc';
+              imageList.value.appendChild(img);
+            }).catch(err => {
+              console.error('Failed to capture frame:', err);
+            });
+          });
+        }
+
+        // 监听每个目标元素的 CSS 属性变化
+        function observeElements(elements) {
+          elements.forEach(element => {
+            const observer = new MutationObserver(mutations => {
+              mutations.forEach(mutation => {
+                if (mutation.type === 'attributes' && (mutation.attributeName === 'class' || mutation.attributeName === 'style')) {
+                  captureFrame(mutation.target);
                 }
-            }
+                // if (mutation.type === 'childList') {
+                //     captureFrame(mutation.target);
+                //     mutation.addedNodes.forEach(node => {
+                //         if (node.nodeType === 1) {
+                //             observeElements([node]);
+                //         }
+                //     });
+                // }
+              });
+            });
+
+            observer.observe(element, {
+              attributes: true,
+              attributeFilter: ['class', 'style'],
+              childList: true,
+              subtree: true
+            });
+          });
+        }
+
+        // 清空图片栈
+        function clearImages() {
+          imageList.value.innerHTML = '<h3>Captured Frames:</h3>';
+        }
+
+        onMounted(() => {
+          const targets = document.querySelectorAll('.target');
+          observeElements(targets);
         });
-		app.use(ElementPlus);
-        app.mount("#app");
-	</script>
-  </body>
+
+        return {
+          value,
+          imageList,
+          options,
+          clearImages
+        }
+      }
+    });
+    app.use(ElementPlus);
+    app.mount("#app");
+  </script>
+</body>
+
 </html>
